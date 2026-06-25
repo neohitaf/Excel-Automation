@@ -3,7 +3,7 @@ from pathlib import Path
 from templates import FORM3_TEMPLATE
 
 
-# ─── Yardımcı (private) fonksiyonlar ─────────────────────────────────────────
+# ─── Yardımcı (private) fonksiyonlar 
 """" fonksiyonlar, şablonla eşleşen tabloyu bulmak ve başlıkları eşleştirmek için kullanılır. """
 def _sutun_bul(alan_adi, anahtar_kelimeler, basliklar):
     for i, baslik in enumerate(basliklar):
@@ -44,7 +44,7 @@ def _ad_soyad_ayir(ad_soyad):
     return {"ad": ad, "soyad": soyad}, uyari
 
 
-# ─── Ana yardımcı fonksiyonlar ────────────────────────────────────────────────
+# ─── Ana yardımcı fonksiyonlar 
 
 def sutun_haritasi_olustur(tablo, template):
     basliklar = [
@@ -79,7 +79,7 @@ def sutun_haritasi_olustur(tablo, template):
     return konum_haritasi, uyarilar
 
 
-# ─── Dışarıya açık ana fonksiyon ─────────────────────────────────────────────
+# ─── Dışarıya açık ana fonksiyon
 
 def parse_tablo(dosya_yolu, template):
     dosya = Path(dosya_yolu)
@@ -155,7 +155,7 @@ def parse_tablo(dosya_yolu, template):
     return kayitlar, uyarilar
 
 
-# ─── Test bloğu ───────────────────────────────────────────────────────────────
+# ─── Test bloğu
 
 if __name__ == "__main__":
     kayitlar, uyarilar = parse_tablo(

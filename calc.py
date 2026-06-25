@@ -1,4 +1,6 @@
 import openpyxl
+from parser import parse_tablo
+from templates import FORM3_TEMPLATE
 
 GUNLUK_UCRET = 1101
 SGK_AYI = 30
@@ -34,6 +36,21 @@ def puantaj_oku(dosya_yolu):
 
     return kayitlar
 
+def esle(parser_record, puantaj_record):
+    """
+    Puantaj kaydı ile parser kaydını eşleştirir.
+    Döner: (eşleşen parser kaydı, uyarı)
+    """
+    ad_soyad = puantaj_record["ad_soyad"]
+    for name in parser_record:
+        if name["ad_soyad"].upper() == ad_soyad.upper():
+            return name, None
+    return None, f"'{ad_soyad}' Form-3'te bulunamadı."
+    
+    
+
+
+
 
 def hesapla(kayit):
     """
@@ -57,9 +74,20 @@ def hesapla(kayit):
 
 
 if __name__ == "__main__":
+    parser_kayitlari = parse_tablo("veri/Form-3 Deneme.docx", FORM3_TEMPLATE)
     kayitlar = puantaj_oku("veri/Puantaj_ornek.xlsx")
     for k in kayitlar:
         k["gss"] = "EVET"
         sonuc = hesapla(k)
         print(sonuc)
         print()
+
+for puantaj_kaydi in kayitlar:
+    eslesme, uyari = esle(parser_kayitlari,puantaj_kaydi)
+    if uyari:
+        print("UYARI:", uyari)
+    else:
+        print("Eşleşti:", eslesme["ad_soyad"])  
+    
+    
+    
