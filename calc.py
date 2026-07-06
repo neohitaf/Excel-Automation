@@ -1,6 +1,7 @@
 import openpyxl
 from parser import parse_tablo
 from templates import FORM3_TEMPLATE
+from writer import banka_listesi_yaz
 
 GUNLUK_UCRET = 1101
 SGK_AYI = 30
@@ -35,6 +36,10 @@ def puantaj_oku(dosya_yolu):
         
 
     return kayitlar
+ 
+
+def turkce_upper(s):
+    return s.replace("i", "İ").replace("ı", "I").upper()
 
 def esle(parser_record, puantaj_record):
     """
@@ -48,7 +53,6 @@ def esle(parser_record, puantaj_record):
     return None, f"'{ad_soyad}' Form-3'te bulunamadı."
     
     
-
 
 
 
@@ -74,20 +78,19 @@ def hesapla(kayit):
 
 
 if __name__ == "__main__":
-    parser_kayitlari = parse_tablo("veri/Form-3 Deneme.docx", FORM3_TEMPLATE)
+    parser_kayitlari, uyarilar = parse_tablo("veri/Form-3.docx", FORM3_TEMPLATE)
     kayitlar = puantaj_oku("veri/Puantaj_ornek.xlsx")
-    for k in kayitlar:
-        k["gss"] = "EVET"
-        sonuc = hesapla(k)
-        print(sonuc)
-        print()
 
-for puantaj_kaydi in kayitlar:
-    eslesme, uyari = esle(parser_kayitlari,puantaj_kaydi)
-    if uyari:
-        print("UYARI:", uyari)
-    else:
-        print("Eşleşti:", eslesme["ad_soyad"])  
-    
-    
-    
+    sonuclar = []
+    for puantaj_kaydi in kayitlar:
+        parser_kaydi, uyari = esle(parser_kayitlari, puantaj_kaydi)
+        if uyari:
+            print("UYARI:", uyari)
+            continue
+        birlesik = {**parser_kaydi, **puantaj_kaydi}
+        sonuc = hesapla(birlesik)
+        sonuclar.append(sonuc)
+
+    banka_listesi_yaz(sonuclar, "cikti/banka_listesi.xlsx")
+
+

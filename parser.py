@@ -159,7 +159,7 @@ def parse_tablo(dosya_yolu, template):
 
 if __name__ == "__main__":
     kayitlar, uyarilar = parse_tablo(
-        "veri/Form-3 Deneme.docx",
+        "veri/Form-3.docx",
         FORM3_TEMPLATE
     )
 
