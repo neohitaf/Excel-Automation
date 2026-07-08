@@ -77,16 +77,6 @@ def puantaj_oku(dosya_yolu):
 def turkce_upper(s):
     return s.replace("i", "İ").replace("ı", "I").upper()
 
-def esle_ters(puantaj_kayitlari, parser_kaydi):
-    """
-    Form-3 kaydını puantaj kayıtları içinde arar.
-    Döner: (eşleşen puantaj kaydı, uyarı)
-    """
-    ad_soyad = parser_kaydi["ad_soyad"]
-    for p in puantaj_kayitlari:
-        if turkce_upper(p["ad_soyad"]) == turkce_upper(ad_soyad):
-            return p, None
-    return None, f"'{ad_soyad}' Puantaj'da bulunamadı."
 
 def esle(parser_record, puantaj_record):
     """
@@ -103,7 +93,7 @@ def esle(parser_record, puantaj_record):
 
 
 def hesapla(kayit):
-    saat        = kayit.get("toplam_saat", 0)   # ← değişti
+    saat        = kayit.get("toplam_saat", 0)   
     prim_gunu   = saat // 8
     ucret       = prim_gunu * GUNLUK_UCRET
     eksik_gun   = SGK_AYI - prim_gunu
@@ -121,22 +111,18 @@ if __name__ == "__main__":
     parser_kayitlari, uyarilar = parse_tablo("veri/Form-3.docx", FORM3_TEMPLATE)
     kayitlar, ay = puantaj_oku("veri/Puantaj_ornek.xlsx")
 
-    # BANKA LİSTESİ — Form-3 merkezli, uyarı basma
+    # BANKA LİSTESİ — sadece Form-3'ten üret, puantajla kıyaslama yok
     banka_sonuclari = []
     for parser_kaydi in parser_kayitlari:
-        puantaj_kaydi, uyari = esle_ters(kayitlar, parser_kaydi)
-        if uyari:
-            puantaj_kaydi = {}          # ← print kaldırıldı, sessizce boş bırak
-        birlesik = {**puantaj_kaydi, **parser_kaydi}
-        sonuc = hesapla(birlesik)
+        sonuc = hesapla(parser_kaydi)
         banka_sonuclari.append(sonuc)
 
-    # BORDRO — Puantaj merkezli, uyarı bas
+    # BORDRO — Puantaj merkezli, eksik varsa bildir
     bordro_sonuclari = []
     for puantaj_kaydi in kayitlar:
         parser_kaydi, uyari = esle(parser_kayitlari, puantaj_kaydi)
         if uyari:
-            print("UYARI (Bordro):", uyari)   # ← burada kalıyor
+            print("UYARI (Bordro):", uyari)
             parser_kaydi = {}
         birlesik = {**parser_kaydi, **puantaj_kaydi}
         sonuc = hesapla(birlesik)
