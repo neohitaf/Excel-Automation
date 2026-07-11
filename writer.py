@@ -48,11 +48,7 @@ def banka_listesi_yaz(kayitlar, ay, cikti_yolu):
     wb.save(cikti_yolu)
     print(f"Kaydedildi: {cikti_yolu}")
 
-
-
 def bordro_yaz(kayitlar, ay, cikti_yolu):
-    
-    
     AY_NUMARALARI = {"OCAK": 1, "ŞUBAT": 2, "MART": 3, "NİSAN": 4,
                      "MAYIS": 5, "HAZİRAN": 6, "TEMMUZ": 7, "AĞUSTOS": 8,
                      "EYLÜL": 9, "EKİM": 10, "KASIM": 11, "ARALIK": 12}
@@ -68,21 +64,21 @@ def bordro_yaz(kayitlar, ay, cikti_yolu):
 
     ws.cell(row=2, column=1, value=baslik_tarihi)
 
-    # 22 kodlu — satır 6'dan başla
     satir_no = 6
     for k in evet_list:
+        tc = k.get("tc", "") or "eksik"
         ws.cell(row=satir_no, column=2, value=k.get("ad_soyad", ""))
-        ws.cell(row=satir_no, column=3, value=k.get("tc", ""))
+        ws.cell(row=satir_no, column=3, value=tc)
         ws.cell(row=satir_no, column=4, value=k.get("birim", ""))
         ws.cell(row=satir_no, column=5, value=1101)
         ws.cell(row=satir_no, column=6, value=k.get("prim_gunu", 0))
         satir_no += 1
 
-    # 43 kodlu — sabit satır 84'ten başla
     satir_no = 84
     for k in hayir_list:
+        tc = k.get("tc", "") or "eksik"
         ws.cell(row=satir_no, column=2, value=k.get("ad_soyad", ""))
-        ws.cell(row=satir_no, column=3, value=k.get("tc", ""))
+        ws.cell(row=satir_no, column=3, value=tc)
         ws.cell(row=satir_no, column=4, value=k.get("birim", ""))
         ws.cell(row=satir_no, column=5, value=1101)
         ws.cell(row=satir_no, column=6, value=k.get("prim_gunu", 0))
@@ -90,7 +86,7 @@ def bordro_yaz(kayitlar, ay, cikti_yolu):
 
     wb.save(cikti_yolu)
     print(f"Kaydedildi: {cikti_yolu}")
-   
+
 
 def muhtasar_yaz(kayitlar, ay, cikti_yolu):
 
