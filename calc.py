@@ -3,6 +3,7 @@ from parser import parse_tablo
 from templates import FORM3_TEMPLATE
 from writer import banka_listesi_yaz, bordro_yaz
 
+
 GUNLUK_UCRET = 1101
 SGK_AYI = 30
 
@@ -88,6 +89,19 @@ def esle(parser_record, puantaj_record):
         if name["ad_soyad"].upper() == ad_soyad.upper():
             return name, None
     return None, f"'{ad_soyad}' Form-3'te bulunamadı."
+
+
+def esle_ters(puantaj_kayitlari, parser_kaydi):
+    """
+    Form-3 kaydını puantaj kayıtları içinde arar.
+    Sadece birim bilgisini çekmek için kullanılır — uyarı önemli değil.
+    Döner: (eşleşen puantaj kaydı, uyarı)
+    """
+    ad_soyad = parser_kaydi["ad_soyad"]
+    for p in puantaj_kayitlari:
+        if turkce_upper(p["ad_soyad"]) == turkce_upper(ad_soyad):
+            return p, None
+    return None, f"'{ad_soyad}' Puantaj'da bulunamadı."
     
     
 
@@ -111,12 +125,16 @@ if __name__ == "__main__":
     parser_kayitlari, uyarilar = parse_tablo("veri/Form-3.docx", FORM3_TEMPLATE)
     kayitlar, ay = puantaj_oku("veri/Puantaj_ornek.xlsx")
 
-    # BANKA LİSTESİ — sadece Form-3'ten üret, puantajla kıyaslama yok
-    banka_sonuclari = []
-    for parser_kaydi in parser_kayitlari:
-        sonuc = hesapla(parser_kaydi)
-        banka_sonuclari.append(sonuc)
+    # BANKA LİSTESİ — Form-3 merkezli, birim bilgisi puantajdan zenginleştirilir
+banka_sonuclari = []
+for parser_kaydi in parser_kayitlari:
+    puantaj_kaydi, _ = esle_ters(kayitlar, parser_kaydi)  # uyarı önemsenmiyor
+    birim = puantaj_kaydi.get("birim", "") if puantaj_kaydi else ""
+    zenginlesmis = {**parser_kaydi, "birim": birim}
+    sonuc = hesapla(zenginlesmis)
+    banka_sonuclari.append(sonuc)
 
+    
     # BORDRO — Puantaj merkezli, eksik varsa bildir
     bordro_sonuclari = []
     for puantaj_kaydi in kayitlar:

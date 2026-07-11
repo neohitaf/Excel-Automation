@@ -17,9 +17,7 @@ FORM3_TEMPLATE = {
         "bolum":         ["BÖLÜM", "PROGRAM", "ANABİLİM"],
     }
 }
+BORDRO_SABLON_YOLU = "templates/bordro_sablon.xlsx"
+BANKA_LISTESI_SABLON_YOLU = "templates/banka_listesi_sablon.xlsx"
 
-# İleride başka bir tablo eklemek istersen:
-# BORDRO_TEMPLATE = {
-#     "zorunlu": { "ad_soyad": [...], "tc": [...], ... },
-#     "opsiyonel": { ... }
-# }
+
