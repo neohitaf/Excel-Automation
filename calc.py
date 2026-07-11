@@ -1,7 +1,7 @@
 import openpyxl
 from parser import parse_tablo
 from templates import FORM3_TEMPLATE
-from writer import banka_listesi_yaz, bordro_yaz
+from writer import banka_listesi_yaz, bordro_yaz, muhtasar_yaz
 
 
 GUNLUK_UCRET = 1101
@@ -80,16 +80,16 @@ def turkce_upper(s):
 
 
 def esle(parser_record, puantaj_record):
-    """
-    Puantaj kaydı ile parser kaydını eşleştirir.
-    Döner: (eşleşen parser kaydı, uyarı)
-    """
     ad_soyad = puantaj_record["ad_soyad"]
     for name in parser_record:
         if name["ad_soyad"].upper() == ad_soyad.upper():
             return name, None
-    return None, f"'{ad_soyad}' Form-3'te bulunamadı."
-
+    return None, (
+        f"'{ad_soyad}' Puantajda var ama Form-3'te bulunamadı. "
+        f"Normalde bu mümkün değil — Form-3'ü olmayan bir öğrenci çalıştırılamaz. "
+        f"Muhtemel neden: isimde yazım farkı (kısaltma, boşluk, Türkçe karakter farkı) olabilir. "
+        f"Lütfen Form-3 kayıtlarını kontrol edin."
+    )
 
 def esle_ters(puantaj_kayitlari, parser_kaydi):
     """
@@ -126,15 +126,14 @@ if __name__ == "__main__":
     kayitlar, ay = puantaj_oku("veri/Puantaj_ornek.xlsx")
 
     # BANKA LİSTESİ — Form-3 merkezli, birim bilgisi puantajdan zenginleştirilir
-banka_sonuclari = []
-for parser_kaydi in parser_kayitlari:
-    puantaj_kaydi, _ = esle_ters(kayitlar, parser_kaydi)  # uyarı önemsenmiyor
-    birim = puantaj_kaydi.get("birim", "") if puantaj_kaydi else ""
-    zenginlesmis = {**parser_kaydi, "birim": birim}
-    sonuc = hesapla(zenginlesmis)
-    banka_sonuclari.append(sonuc)
+    banka_sonuclari = []
+    for parser_kaydi in parser_kayitlari:
+        puantaj_kaydi, _ = esle_ters(kayitlar, parser_kaydi)
+        birim = puantaj_kaydi.get("birim", "") if puantaj_kaydi else ""
+        zenginlesmis = {**parser_kaydi, "birim": birim}
+        sonuc = hesapla(zenginlesmis)
+        banka_sonuclari.append(sonuc)
 
-    
     # BORDRO — Puantaj merkezli, eksik varsa bildir
     bordro_sonuclari = []
     for puantaj_kaydi in kayitlar:
@@ -148,3 +147,6 @@ for parser_kaydi in parser_kayitlari:
 
     banka_listesi_yaz(banka_sonuclari, ay, "cikti/banka_listesi.xlsx")
     bordro_yaz(bordro_sonuclari, ay, "cikti/bordro.xlsx")
+    muhtasar_yaz(bordro_sonuclari, ay, "cikti/muhtasar.xlsx")
+
+    
