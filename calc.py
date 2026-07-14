@@ -19,14 +19,34 @@ def puantaj_oku(dosya_yolu):
     # Birim ve ay ara
     birim = ""
     ay = ""
+
+    AYLAR = {
+    "OCAK":    ["OCAK"],
+    "ŞUBAT":   ["ŞUBAT", "SUBAT"],
+    "MART":    ["MART"],
+    "NİSAN":   ["NİSAN", "NISAN"],
+    "MAYIS":   ["MAYIS"],
+    "HAZİRAN": ["HAZİRAN", "HAZIRAN"],
+    "TEMMUZ":  ["TEMMUZ"],
+    "AĞUSTOS": ["AĞUSTOS", "AGUSTOS"],
+    "EYLÜL":   ["EYLÜL", "EYLUL"],
+    "EKİM":    ["EKİM", "EKIM"],
+    "KASIM":   ["KASIM"],
+    "ARALIK":  ["ARALIK"],
+                   }
+
     for row in ws.iter_rows(max_row=15):
-        for cell in row:
-            val = str(cell.value).strip() if cell.value else ""
-            if "Birimin Adı" in val or "Kurum Adı" in val:
-                birim = val.replace("Birimin Adı:", "").replace("Kurum Adı:", "").strip()
-            if val in ["OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN",
-                       "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"]:
-                ay = val
+     for cell in row:
+        val = str(cell.value).strip() if cell.value else ""
+
+        if "Birimin Adı" in val or "Kurum Adı" in val:
+            birim = val.replace("Birimin Adı:", "").replace("Kurum Adı:", "").strip()
+
+        for ay_adi, alternatifler in AYLAR.items():
+            for alternatif in alternatifler:
+                if alternatif in turkce_upper(val):
+                    ay = ay_adi
+                    break
 
     # Başlık satırını bul — "Adı Soyadı" veya "Ad Soyad" geçen satır
     baslik_satiri = None

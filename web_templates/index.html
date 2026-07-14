@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Staj Otomasyon</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container mt-5">
+        <h1>Staj Otomasyon — Dosya Yükleme</h1>
+
+        <form action="/isle" method="post" enctype="multipart/form-data">
+
+            <div class="mb-3">
+                <label for="form3" class="form-label">Form-3 Belgesi (.docx)</label>
+                <input type="file" class="form-control" id="form3" name="form3" accept=".docx" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="puantaj" class="form-label">Puantaj Dosyası (.xlsx)</label>
+                <input type="file" class="form-control" id="puantaj" name="puantaj" accept=".xlsx" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">İşlemi Başlat</button>
+
+        </form>
+    </div>
+
+</body>
+</html>

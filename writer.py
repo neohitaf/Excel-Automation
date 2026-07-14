@@ -103,10 +103,27 @@ def muhtasar_yaz(kayitlar, ay, cikti_yolu):
 
     wb = openpyxl.load_workbook(MUHTASAR_SABLON_YOLU)
     ws = wb["MUHTASAR "]
-
     satir_no = 2
     for k in sirali:
-        tc = k.get("tc", "")
+        tc = k.get("tc", "") or "eksik"
+
+    # Ad/Soyad — önce Form-3'ten gelen ayrımı dene, yoksa Puantaj'daki tam isimden türet
+        if k.get("ad") and k.get("soyad"):
+            ad = k["ad"]
+            soyad = k["soyad"]
+        else:
+          tam_isim = k.get("ad_soyad", "")
+          if tam_isim:
+             parcalar = tam_isim.strip().split()
+             if len(parcalar) > 1:
+                ad = " ".join(parcalar[:-1])
+                soyad = parcalar[-1]
+             else:
+                ad = parcalar[0]
+                soyad = "eksik"
+          else:
+              ad = "eksik"
+              soyad = "eksik"
 
         ws.cell(row=satir_no, column=1,  value=MUHTASAR_SABIT["belgenin_mahiyeti"])
         ws.cell(row=satir_no, column=2,  value=k.get("belge_turu", ""))
@@ -118,23 +135,26 @@ def muhtasar_yaz(kayitlar, ay, cikti_yolu):
         ws.cell(row=satir_no, column=8,  value=MUHTASAR_SABIT["alt_isveren_no"])
         ws.cell(row=satir_no, column=9,  value=tc)
         ws.cell(row=satir_no, column=10, value=tc)
-        ws.cell(row=satir_no, column=11, value=k.get("ad", ""))
-        ws.cell(row=satir_no, column=12, value=k.get("soyad", ""))
+        ws.cell(row=satir_no, column=11, value=ad)
+        ws.cell(row=satir_no, column=12, value=soyad)
         ws.cell(row=satir_no, column=13, value=k.get("prim_gunu", 0))
         ws.cell(row=satir_no, column=15, value=k.get("ucret", 0))
-        ws.cell(row=satir_no, column=22, value=k.get("eksik_gun", 0))          # V
+        ws.cell(row=satir_no, column=22, value=k.get("eksik_gun", 0))
         ws.cell(row=satir_no, column=23, value=MUHTASAR_SABIT["eksik_gun_nedeni"])
         ws.cell(row=satir_no, column=24, value=MUHTASAR_SABIT["meslek_kodu"])
         ws.cell(row=satir_no, column=26, value=MUHTASAR_SABIT["tahakkuk_nedeni"])
         ws.cell(row=satir_no, column=27, value=ay_metin)
         ws.cell(row=satir_no, column=28, value=str(yil))
         ws.cell(row=satir_no, column=29, value=MUHTASAR_SABIT["gelir_vergisi_muaf"])
-        ws.cell(row=satir_no, column=31, value=MUHTASAR_SABIT["gv_engellilik_orani"])  # AE
-        ws.cell(row=satir_no, column=34, value=MUHTASAR_SABIT["gv_kesintisi"])         # AH
-        ws.cell(row=satir_no, column=36, value=MUHTASAR_SABIT["damga_vergisi_kesintisi"])  # AJ
-        # AD, AF, AG, AI'ye hiç dokunmuyoruz — formülleri korunuyor
+        ws.cell(row=satir_no, column=31, value=MUHTASAR_SABIT["gv_engellilik_orani"])
+        ws.cell(row=satir_no, column=34, value=MUHTASAR_SABIT["gv_kesintisi"])
+        ws.cell(row=satir_no, column=36, value=MUHTASAR_SABIT["damga_vergisi_kesintisi"])
 
         satir_no += 1
+
+    
+
+        
 
     wb.save(cikti_yolu)
     print(f"Kaydedildi: {cikti_yolu}")
