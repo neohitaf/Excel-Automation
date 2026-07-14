@@ -39,12 +39,10 @@ The fixed row positions and workbook-specific rules in the code represent the st
 - Extracts student identity, GSS, bank, IBAN, and related information
 - Reads monthly `.xlsx` timesheet files and identifies student records
 - Extracts unit names, payroll periods, and total working hours
-- Accepts multiple Turkish month-name spellings and casing variants (e.g. "Mayıs", "MAYIS", "01-31 Mayıs 2026")
-- Normalizes and matches Form-3 records with timesheet records, with Turkish-character-aware comparison
+- Normalizes and matches Form-3 records with timesheet records
 - Uses different source priorities according to output requirements:
   - The **bank list** is primarily Form-3-based and is enriched with unit information from the timesheet
   - The **payroll** and **tax declaration** outputs are primarily timesheet-based and are enriched with Form-3 information
-  - When a timesheet record has no Form-3 match, the payroll and tax declaration outputs still include the record, deriving name fields from the timesheet and marking missing identity fields (e.g. national ID) as "eksik" (missing) rather than leaving them blank
 - Calculates premium days, missing days, and payroll-related fields
 - Separates records according to GSS status and document type
 - Preserves formulas, formatting, and editable cells in institutional templates
@@ -53,7 +51,6 @@ The fixed row positions and workbook-specific rules in the code represent the st
   - `bordro.xlsx`
   - `muhtasar.xlsx`
   - `banka_listesi.xlsx`
-- Provides a local FastAPI web interface for uploading source files and downloading generated workbooks
 
 ## Workflow
 
@@ -83,23 +80,22 @@ Editable Excel outputs for final human review
 The project separates the automation logic from the web layer.
 
 ```text
-FastAPI (app.py)
+FastAPI
   |
   |-- receives uploaded files
-  |-- creates a per-request working directory
+  |-- validates HTTP requests
   |-- calls the automation service
-  |-- renders result and error pages
-  |-- serves generated files for download
+  |-- returns result and download responses
   |
   v
-calistir() (main.py)
+calistir()
   |
   |-- parses Form-3
   |-- reads the monthly timesheet
   |-- matches and enriches records
   |-- calculates payroll fields
   |-- generates Excel outputs
-  |-- returns warnings, statistics, and output paths
+  |-- returns warnings and output paths
   |
   v
 parser.py + calc.py + writer.py
@@ -109,46 +105,35 @@ The core `calistir()` function is independent of FastAPI. It accepts input and o
 
 ```python
 {
-    "ay": "MAYIS",
     "uyarilar": [...],
-    "istatistikler": {
-        "form3_kayit_sayisi": 7,
-        "puantaj_kayit_sayisi": 3,
-        "eslesen_kayit_sayisi": 1,
-        "eslesmeyen_kayit_sayisi": 2,
-        "banka_kayit_sayisi": 7,
-        "bordro_kayit_sayisi": 3,
-    },
     "cikti_dosyalari": [
-        "cikti/banka_listesi.xlsx",
-        "cikti/bordro.xlsx",
-        "cikti/muhtasar.xlsx",
+        "banka_listesi.xlsx",
+        "bordro.xlsx",
+        "muhtasar.xlsx",
     ],
 }
 ```
 
-Critical, unrecoverable conditions (e.g. no processable records, missing payroll period) raise a `ValueError` instead of being silently absorbed into a generic error field. This keeps genuine programming errors distinguishable from expected data-quality issues. The caller (currently the FastAPI layer) is responsible for catching this exception and presenting it to the user.
-
-This separation allows the same automation workflow to be used from the command line or a web interface without rewriting the business logic.
+This allows the same automation workflow to be used from the command line, a web interface, or future integrations without rewriting the business logic.
 
 ## Web Interface Stack
 
-The local web interface uses:
+The planned local web interface uses:
 
-- **FastAPI** — HTTP layer, file upload and download routes, per-request working directories, and automation-service calls
-- **Jinja2** — server-side HTML templates for the upload and result pages
-- **Bootstrap** — responsive forms, alerts, and buttons without hand-written CSS
-- **Vanilla JavaScript** — small user-experience enhancements where needed
+- **FastAPI** — HTTP layer, file upload and download routes, and automation-service calls
+- **Jinja2** — server-side HTML templates for upload, result, and error pages
+- **Bootstrap** — responsive forms, alerts, tables, buttons, and page layout
+- **Vanilla JavaScript** — small user-experience enhancements such as displaying selected filenames and disabling the submit button during processing
 
-The web interface is intentionally lightweight. The Excel workbooks continue to be the final review and correction environment.
+The web interface is intended to remain lightweight. The Excel workbooks continue to be the final review and correction environment.
 
 ## Technology Stack
 
 - **Python** — application and business logic
 - **python-docx** — Word document parsing
 - **openpyxl** — Excel reading, writing, and template preservation
+- **pandas** — structured data-processing support where required
 - **FastAPI** — local web application and HTTP endpoints
-- **Uvicorn** — ASGI server used to run the FastAPI application
 - **Jinja2** — server-side HTML rendering
 - **Bootstrap** — responsive interface components
 - **Vanilla JavaScript** — basic client-side interaction
@@ -157,31 +142,36 @@ The current development environment uses Python 3.14.
 
 ## Project Structure
 
+The target structure for the application is:
+
 ```text
-staj-otomasyon/
-├── main.py              # calistir() — the reusable automation entry point
-├── app.py               # FastAPI application and HTTP routes
-├── parser.py            # Form-3 Word document parser
-├── calc.py              # Timesheet reading, matching, and calculations
-├── writer.py            # Institutional Excel output generation
-├── templates.py         # Field definitions, workbook paths, and constants
-├── web_templates/        # Jinja2 HTML templates (named to avoid clashing
-│   ├── index.html        # with the Excel "templates/" folder below)
-│   └── sonuc.html
-├── static/
-│   ├── css/
-│   └── js/
-├── templates/            # Local Excel workbook templates, not tracked in Git
-├── veri/                 # Local input documents, not tracked in Git
-├── cikti/                # Generated workbooks (CLI runs), not tracked in Git
+Excel-Automation/
+├── app/
+│   ├── main.py                 # FastAPI application and HTTP routes
+│   ├── service.py              # Main calistir() automation workflow
+│   ├── parser.py               # Form-3 Word document parser
+│   ├── calc.py                 # Timesheet reading, matching, and calculations
+│   ├── writer.py               # Institutional Excel output generation
+│   ├── templates.py            # Field definitions, workbook paths, and constants
+│   ├── web_templates/
+│   │   ├── index.html          # File-upload page
+│   │   ├── result.html         # Processing result and warning page
+│   │   └── error.html          # User-facing error page
+│   └── static/
+│       └── js/
+│           └── app.js          # Minimal client-side interactions
+├── institutional_templates/   # Local Excel templates, not tracked in Git
+├── veri/                       # Local input documents, not tracked in Git
+├── cikti/                      # Generated workbooks, not tracked in Git
 ├── instance/
-│   └── jobs/              # Per-request working directories (web uploads/outputs)
+│   └── jobs/                   # Temporary per-request working directories
+├── tests/
 ├── requirements.txt
 ├── .gitignore
 └── README.md
 ```
 
-`web_templates/` intentionally uses a different name than `templates/` because the latter is already reserved for the institution's Excel workbook templates; Jinja2's default template folder name would otherwise collide with it.
+The exact folder names may change during development, but the separation between the web layer, automation service, document-processing modules, and institutional templates will remain.
 
 ## Installation on Windows 11
 
@@ -222,12 +212,12 @@ pip install -r requirements.txt
 Create the local working directories below. They are intentionally excluded from Git because they may contain personal or institutional data.
 
 ```text
-staj-otomasyon/
+Excel-Automation/
 ├── veri/
 │   ├── Form-3.docx
 │   └── Puantaj_ornek.xlsx
 ├── cikti/
-└── templates/
+└── institutional_templates/
     ├── bordro_sablon.xlsx
     ├── banka_listesi_sablon.xlsx
     └── muhtasar_sablon.xlsx
@@ -239,31 +229,50 @@ Template workbooks must be stored locally and must never be committed to version
 
 ## Running the Command-Line Workflow
 
-The command-line entry point calls the reusable `calistir()` function with local paths:
+The command-line entry point calls the reusable `calistir()` function with local paths.
+
+Example:
 
 ```python
-from main import calistir
+from service import calistir
 
 sonuc = calistir(
-    form3_yolu="veri/Form-3.docx",
-    puantaj_yolu="veri/Puantaj_ornek.xlsx",
-    cikti_klasoru="cikti",
+    "veri/Form-3.docx",
+    "veri/Puantaj_ornek.xlsx",
+    "cikti",
 )
 ```
 
-Running the module directly wraps this call in a `try/except ValueError` block and prints a readable summary:
+A typical result contains warnings and generated output paths:
 
-```powershell
-python main.py
+```python
+{
+    "uyarilar": [
+        "A timesheet record could not be matched with Form-3."
+    ],
+    "cikti_dosyalari": [
+        "cikti/banka_listesi.xlsx",
+        "cikti/bordro.xlsx",
+        "cikti/muhtasar.xlsx",
+    ],
+}
 ```
 
-## Running the Web Interface
+The `if __name__ == "__main__":` block is used only as a local command-line entry point. The web layer will call the same `calistir()` function with request-specific file paths.
 
-```powershell
-uvicorn app:app --reload
-```
+## Planned Local Web Workflow
 
-Then open `http://127.0.0.1:8000` in a browser, upload a Form-3 document and a monthly timesheet, and the result page will show the detected payroll period, warnings, and download links for the generated workbooks. Each upload is processed in its own directory under `instance/jobs/`, identified by a randomly generated ID, so concurrent uploads do not interfere with each other.
+The FastAPI-based interface will provide the following flow:
+
+1. Select the Form-3 document
+2. Select the monthly timesheet
+3. Upload and process the files
+4. Display the detected payroll period
+5. Show matched, unmatched, and warning records
+6. Generate institution-compatible workbooks
+7. Download the outputs individually or as a ZIP archive
+
+The first web release may require both files to be selected for each operation. A later version may support storing and versioning an active Form-3 document so that users only upload the monthly timesheet.
 
 ## Data Validation Philosophy
 
@@ -277,14 +286,21 @@ Examples include:
 - Form-3 records without a matching monthly timesheet record
 - Timesheet records without a matching Form-3 record
 - Possible name-format or Turkish-character differences
+- Unexpected GSS values
+- Empty unit information
+- Records requiring manual confirmation
 
-Critical validation errors stop output generation and raise a `ValueError`, rather than being converted into another warning.
+Critical validation errors should stop output generation.
 
 Examples include:
 
-- No processable records found in the Form-3 document
-- No processable records found in the timesheet
+- An unreadable Form-3 or timesheet file
+- Missing mandatory columns
 - An undetectable payroll period
+- Missing institutional templates
+- No processable records
+- Workbook structures that do not match expected templates
+- Output files that cannot be written safely
 
 The final Excel files remain editable so administrative staff can perform the established verification and correction steps.
 
@@ -300,33 +316,45 @@ For that reason:
 - Public sample templates must contain only empty or fully synthetic data
 - Logs, screenshots, and demonstrations must not expose personal information
 - Local test data must be anonymized before repository publication
-- Uploaded web files are stored only in per-request directories under `instance/jobs/`
+- Uploaded web files should be stored only in temporary, request-specific directories
+- Temporary files should be deleted after the processing or download workflow is complete
+- The first deployment should remain local unless the institution provides an approved secure hosting environment
 
-The `veri/`, `cikti/`, `templates/`, and `instance/` directories are excluded through `.gitignore`.
+The `veri/`, `cikti/`, `institutional_templates/`, and temporary job directories should be excluded through `.gitignore`.
 
 ## Current Status
 
 **Active development**
 
-The core workflow for document parsing, timesheet reading, record matching, payroll calculations, and Excel output generation is implemented and working end-to-end, including a working local FastAPI web interface for upload and download.
+The core workflow for document parsing, timesheet reading, record matching, payroll calculations, and Excel output generation is implemented.
 
 The current development focus is:
 
-- Improving warning and validation messages
-- Extending automated tests with anonymized and synthetic data
-- Refining the web interface (styling, ZIP downloads, per-request cleanup)
+- Finalizing the reusable `calistir()` service flow
+- Improving warning and validation results
+- Creating the FastAPI upload and download layer
+- Rendering processing results through Jinja2 templates
+- Building a lightweight Bootstrap interface
+- Adding small client-side interactions with vanilla JavaScript
+- Testing the workflow with anonymized and synthetic data
 
 This repository represents an independently developed administrative workflow automation project rather than a finished commercial payroll product.
 
 ## Planned Improvements
 
-- Downloadable ZIP packages combining all three outputs
+- FastAPI-based upload, processing, and download workflow
+- Jinja2 result and error pages
+- Bootstrap-based responsive interface
+- Downloadable ZIP packages and processing reports
 - Stronger validation for GSS, identity-number, and IBAN fields
+- Consistent Turkish-character normalization during record matching
 - Template-capacity and worksheet-structure checks
+- Clearing old input cells without modifying formula cells
 - Automated tests using fully synthetic data
 - Configurable payroll periods and institution-specific parameters
-- Per-request temporary-directory cleanup after download
-- Improved processing statistics displayed in the web interface
+- Active Form-3 storage and version tracking
+- Per-request temporary-directory cleanup
+- Improved processing statistics for matched and unmatched records
 
 ## Skills Demonstrated
 
@@ -334,14 +362,16 @@ This project combines software development with business-process analysis and de
 
 - Requirements analysis in an existing administrative environment
 - Balancing automation with user control and institutional constraints
+- Object-oriented and modular software design principles
 - Word and Excel document integration
 - Data extraction, normalization, and record matching
 - Rule-based payroll processing
 - Template-compatible output generation
-- Structured warning and result handling, with a clear separation between recoverable warnings and unrecoverable errors
+- Structured warning and result handling
 - FastAPI-based backend development
 - Server-side HTML rendering with Jinja2
 - Responsive interface development with Bootstrap
+- Basic client-side interaction with vanilla JavaScript
 - Incremental modernization of a manual institutional workflow
 
 ## Disclaimer
