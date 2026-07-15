@@ -8,20 +8,37 @@
 <body>
 
     <div class="container mt-5">
-        <h1>Staj Otomasyon — Dosya Yükleme</h1>
+        <h1>Stajyer Otomasyon — Dosya Yükleme</h1>
 
         <form action="/isle" method="post" enctype="multipart/form-data">
 
             <div class="mb-3">
-                <label for="form3" class="form-label">Form-3 Belgesi (.docx)</label>
+                <label for="form3" class="form-label">Form Belgesi (.docx)</label>
                 <input type="file" class="form-control" id="form3" name="form3" accept=".docx" required>
             </div>
-
-            <div class="mb-3">
-                <label for="puantaj" class="form-label">Puantaj Dosyası (.xlsx)</label>
-                <input type="file" class="form-control" id="puantaj" name="puantaj" accept=".xlsx" required>
+             
+            <div class ="mb-3">
+                <label for="puantaj_listesi" class="puantaj_listesi-label">Puantaj Dosyası (.xlsx)</label>
+                <input type="file" class="form-control" name ="puantaj_listesi" multiple accept=".xlsx">
             </div>
-
+            
+   <div class="mb-3">
+       <label for="beklenen_ay" class="form-label">İşlenecek Ay</label>
+       <select name="beklenen_ay" id="beklenen_ay" class="form-select" required>
+           <option value="OCAK">Ocak</option>
+           <option value="ŞUBAT">Şubat</option>
+           <option value="MART">Mart</option>
+           <option value="NİSAN">Nisan</option>
+           <option value="MAYIS">Mayıs</option>
+           <option value="HAZİRAN">Haziran</option>
+           <option value="TEMMUZ">Temmuz</option>
+           <option value="AĞUSTOS">Ağustos</option>
+           <option value="EYLÜL">Eylül</option>
+           <option value="EKİM">Ekim</option>
+           <option value="KASIM">Kasım</option>
+           <option value="ARALIK">Aralık</option>
+        </select>
+         </div>
             <button type="submit" class="btn btn-primary">İşlemi Başlat</button>
 
         </form>

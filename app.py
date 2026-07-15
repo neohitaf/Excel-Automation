@@ -1,57 +1,55 @@
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import FastAPI, File, Request, UploadFile
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from main import calistir
+from main import form3_ayristir, coklu_puantaj_isle
 
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 templates = Jinja2Templates(directory="web_templates")
 
 
 @app.get("/", response_class=HTMLResponse)
 def anasayfa(request: Request):
-    """Dosya yükleme formunu gösterir."""
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html",
-        context={},
-    )
+    return templates.TemplateResponse(request=request, name="index.html", context={})
 
 
 @app.post("/isle", response_class=HTMLResponse)
 async def dosyalari_isle(
     request: Request,
     form3: UploadFile = File(...),
-    puantaj: UploadFile = File(...),
+    puantaj_listesi: list[UploadFile] = File(...),
+    beklenen_ay: str = Form(...),
 ):
-    """Yüklenen dosyaları alır, calistir() ile işler, sonucu gösterir."""
-
     is_kimligi = str(uuid4())
     is_klasoru = Path("instance/jobs") / is_kimligi
     girdi_klasoru = is_klasoru / "girdi"
     cikti_klasoru = is_klasoru / "cikti"
 
     girdi_klasoru.mkdir(parents=True, exist_ok=True)
-    cikti_klasoru.mkdir(parents=True, exist_ok=True)
 
     form3_yolu = girdi_klasoru / "Form-3.docx"
-    puantaj_yolu = girdi_klasoru / "Puantaj.xlsx"
-
     form3_yolu.write_bytes(await form3.read())
-    puantaj_yolu.write_bytes(await puantaj.read())
+
+    puantaj_yollari = []
+    for i, puantaj_dosyasi in enumerate(puantaj_listesi):
+        puantaj_yolu = girdi_klasoru / f"Puantaj_{i}.xlsx"
+        puantaj_yolu.write_bytes(await puantaj_dosyasi.read())
+        puantaj_yollari.append(str(puantaj_yolu))
 
     try:
-        sonuc = calistir(
-            form3_yolu=str(form3_yolu),
-            puantaj_yolu=str(puantaj_yolu),
-            cikti_klasoru=str(cikti_klasoru),
+        parser_kayitlari, form3_uyarilari = form3_ayristir(str(form3_yolu))
+        sonuc = coklu_puantaj_isle(
+            parser_kayitlari,
+            form3_uyarilari,
+            puantaj_yollari,
+            str(cikti_klasoru),
+            beklenen_ay=beklenen_ay,
         )
         return templates.TemplateResponse(
             request=request,
@@ -68,6 +66,5 @@ async def dosyalari_isle(
 
 @app.get("/indir/{is_kimligi}/{dosya_adi}")
 def dosya_indir(is_kimligi: str, dosya_adi: str):
-    """Üretilen Excel dosyasını indirir."""
     dosya_yolu = Path("instance/jobs") / is_kimligi / "cikti" / dosya_adi
     return FileResponse(path=dosya_yolu, filename=dosya_adi)
